@@ -346,12 +346,12 @@ textarea::placeholder { color: #B09070; font-style: italic; }
 }
 
 .deva-main {
-  font-family: 'Noto Serif Devanagari', serif;
+  font-family: 'Crimson Pro', Georgia, serif;
   font-size: 1.15rem;
   line-height: 1.35;
   color: #3A2410;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 
@@ -515,6 +515,7 @@ textarea::placeholder { color: #B09070; font-style: italic; }
           <button class="btn" id="copy-itrans-btn">Copy</button>
         </div>
         <textarea id="itrans-input" rows="6"
+          autocorrect="off" autocapitalize="none" autocomplete="off" spellcheck="false"
           placeholder="e.g. namaH shivAya, yogaH, kShetraM…"></textarea>
       </div>
 
@@ -544,7 +545,7 @@ textarea::placeholder { color: #B09070; font-style: italic; }
     <!-- Helper: full-width below both panes -->
     <div class="helper-panel-wrap">
       <button class="helper-toggle-btn" id="helper-toggle">
-        ITRANS Guide <span class="fold-arrow" id="fold-arrow">▶</span>
+        ITRANS Guide <span class="fold-arrow" id="fold-arrow">▶&#xFE0E;</span>
       </button>
       <div class="helper-panel" id="helper-panel" hidden></div>
     </div>
@@ -588,6 +589,8 @@ const SPECIAL_MAP = [
   ['||','॥'], ['M','ं'], ['H','ः'], ['|','।'], ["'",'ऽ'],
 ];
 
+const DIGIT_MAP = ['०','१','२','३','४','५','६','७','८','९'];
+
 // ─── Tokenizer ────────────────────────────────────────────────────────────────
 function tryMatch(input, i, map) {
   for (const e of map) if (input.startsWith(e[0], i)) return e;
@@ -615,6 +618,10 @@ function tokenize(input) {
         tokens.push({ kind: 'escaped', deva: content, itrans: '<' + content + '>' });
         i = end + 1; continue;
       }
+    }
+    if (input[i] >= '0' && input[i] <= '9') {
+      tokens.push({ kind: 'special', itrans: input[i], deva: DIGIT_MAP[+input[i]] });
+      i++; continue;
     }
     if (/\s/.test(input[i])) {
       let j = i + 1;
@@ -713,6 +720,10 @@ const HELPER_SECTIONS = [
   { title: 'अन्तस्थ', items: [{d:'य',i:'y'},{d:'र',i:'r'},{d:'ल',i:'l'},{d:'व',i:'v'}]},
   { title: 'ऊष्म',    items: [{d:'श',i:'sh'},{d:'ष',i:'Sh'},{d:'स',i:'s'},{d:'ह',i:'h'}]},
   { title: 'विशेष',   items: [{d:'ळ',i:'L'},{d:'क्ष',i:'kSh'},{d:'ज्ञ',i:'GY'}]},
+  { title: 'Digits (अङ्क)', items: [
+    {d:'०',i:'0'},{d:'१',i:'1'},{d:'२',i:'2'},{d:'३',i:'3'},{d:'४',i:'4'},
+    {d:'५',i:'5'},{d:'६',i:'6'},{d:'७',i:'7'},{d:'८',i:'8'},{d:'९',i:'9'},
+  ]},
 ];
 
 function buildHelperPanel() {

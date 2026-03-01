@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="sa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanskrit Transliterator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Noto+Serif+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #D4B896; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #B08060; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #8B5E40; }
+* { scrollbar-color: #B08060 #D4B896; scrollbar-width: thin; }
+
+body {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 18px;
+  color: #3A2410;
+  background-color: #F5EFE7;
+  min-height: 100vh;
+  padding: 36px 32px 56px;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 300px 300px;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+h1 {
+  font-size: 2.2rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-align: center;
+  margin-bottom: 4px;
+  color: #3A2410;
+}
+
+h1 em {
+  font-style: normal;
+  font-weight: 600;
+  color: #7A5030;
+  letter-spacing: 0.08em;
+}
+
+h1 .arrow {
+  color: #C1775A;
+  font-weight: 300;
+  padding: 0 0.12em;
+  font-style: normal;
+}
+
+.subtitle {
+  text-align: center;
+  font-style: italic;
+  color: #7A5030;
+  font-size: 1rem;
+  margin-top: -16px;
+}
+
+/* ── Unified panel ── */
+.panel {
+  background: #E8D5B7;
+  border-radius: 14px;
+  box-shadow:
+    0 3px 10px rgba(90,50,20,0.13),
+    inset 0 1px 2px rgba(255,240,210,0.65),
+    inset 0 -2px 5px rgba(90,50,20,0.07);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Pane row ── */
+.panel-panes {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+/* ── Split panes ── */
+.split-pane {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 18px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Vertical divider ── */
+.pane-divider {
+  width: 1px;
+  flex-shrink: 0;
+  align-self: stretch;
+  position: relative;
+}
+
+.pane-divider::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 0;
+  width: 1px;
+  background: rgba(90, 50, 20, 0.18);
+}
+
+.pane-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 44px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7A5030;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.pane-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Toggle switch ── */
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #7A5030;
+  user-select: none;
+}
+
+.toggle-switch input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 16px;
+  background: #C4A87A;
+  border-radius: 99px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-switch input[type="checkbox"]:checked { background: #C1775A; }
+
+.toggle-switch input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  background: #FFF8F2;
+  border-radius: 50%;
+  top: 2.5px;
+  left: 2.5px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 2px rgba(90,30,10,0.2);
+}
+
+.toggle-switch input[type="checkbox"]:checked::after { left: 14.5px; }
+
+/* ── Textarea ── */
+textarea {
+  flex: 1;
+  min-height: 160px;
+  resize: none;
+  width: 100%;
+  background: #F0E2CC;
+  border: 1.5px solid #D4B896;
+  border-radius: 8px;
+  padding: 11px 13px;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 1.05rem;
+  color: #3A2410;
+  box-shadow: inset 0 2px 5px rgba(90,50,20,0.09);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  line-height: 1.5;
+}
+
+textarea:focus {
+  border-color: #C1775A;
+  box-shadow: inset 0 2px 5px rgba(90,50,20,0.09), 0 0 0 2px rgba(193,119,90,0.18);
+}
+
+textarea::placeholder { color: #B09070; font-style: italic; }
+
+/* ── Helper trigger bar (full-width, below both panes) ── */
+
+.helper-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 0.85rem;
+  color: #7A5030;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 0.15s;
+}
+
+.helper-toggle-btn:hover { opacity: 1; }
+
+.fold-arrow {
+  font-size: 0.58rem;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.fold-arrow.open { transform: rotate(90deg); }
+
+/* ── Helper panel (full-width, single column, below both panes) ── */
+.helper-panel-wrap {
+  position: relative;
+  padding: 16px 22px 4px;
+}
+
+.helper-panel-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 1px;
+  background: rgba(90, 50, 20, 0.18);
+}
+
+.helper-panel {
+  margin-top: 8px;
+  background: #E2C99A;
+  border: 1.5px solid #C8A878;
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  width: fit-content;
+  max-width: 100%;
+  padding-right: 26px;
+}
+
+.helper-section { margin-bottom: 9px; }
+.helper-section:last-child { margin-bottom: 0; }
+
+.helper-section-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #7A5030;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(90,50,20,0.12);
+  padding-bottom: 2px;
+}
+
+.helper-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+
+.mapping-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 5px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: rgba(255,248,235,0.55);
+  transition: background 0.1s, border-color 0.1s;
+  min-width: 32px;
+}
+
+.mapping-item:hover {
+  background: rgba(193,119,90,0.15);
+  border-color: rgba(193,119,90,0.35);
+}
+
+.mapping-deva {
+  font-family: 'Noto Serif Devanagari', serif;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: #3A2410;
+}
+
+.mapping-itrans {
+  font-family: 'Crimson Pro', monospace;
+  font-size: 0.58rem;
+  color: #7A5030;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+/* ── Devanagari output ── */
+.devanagari-output {
+  flex: 1;
+  min-height: 80px;
+  padding: 11px 13px;
+  background: #D9C4A0;
+  border: 1.5px solid #C4A878;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 5px rgba(90,50,20,0.10);
+}
+
+.devanagari-output.empty::after {
+  content: 'Devanagari will appear here…';
+  display: block;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: #B09070;
+}
+
+.deva-main {
+  font-family: 'Noto Serif Devanagari', serif;
+  font-size: 1.15rem;
+  line-height: 1.35;
+  color: #3A2410;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+
+/* ── Cluster: show source (column) ── */
+.cluster.src {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: top;
+  gap: 0;
+}
+
+.itrans-label {
+  font-family: 'Crimson Pro', monospace;
+  font-size: 0.6rem;
+  color: #9A7050;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+}
+
+/* ── Cluster: cycle only (inline-block, badge below) ── */
+.cluster.cyc {
+  display: inline-block;
+  position: relative;
+  vertical-align: baseline;
+  padding-bottom: 0.85rem;
+}
+
+.cluster.cyc > .variant-ctrl {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* ── Cycle badge ── */
+.variant-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 0.68rem;
+  color: #A0614A;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(193,119,90,0.09);
+  line-height: 1.4;
+  transition: background 0.12s, color 0.12s;
+}
+
+.variant-ctrl:hover { background: rgba(193,119,90,0.22); color: #7A3010; }
+.variant-ctrl:active { background: rgba(193,119,90,0.35); }
+
+.cycle-sym { font-size: 1em; }
+
+.cycle-count {
+  display: none;
+  font-size: 0.85em;
+  letter-spacing: 0.02em;
+}
+
+.variant-ctrl:hover .cycle-count { display: inline; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  background: #C1775A;
+  color: #FFF8F2;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 13px;
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(90,30,10,0.22), inset 0 1px 1px rgba(255,200,170,0.28);
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.btn:hover {
+  background: #A0614A;
+  box-shadow: 0 1px 3px rgba(90,30,10,0.22), inset 0 1px 1px rgba(255,200,170,0.2);
+}
+
+.btn:active { transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(90,30,10,0.28); }
+.btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+.btn.copied { background: #7A9A60; box-shadow: 0 1px 3px rgba(40,70,20,0.22); }
+
+
+/* ── Responsive: stack panes on narrow screens ── */
+/* ── Info tooltip ── */
+.tip-anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: rgba(193,119,90,0.25);
+  color: #A0614A;
+  font-size: 0.62rem;
+  font-style: normal;
+  cursor: help;
+  position: relative;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.tip-anchor::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  right: 0;
+  width: 210px;
+  background: #C4A07A;
+  color: #3A2410;
+  font-family: 'Crimson Pro', 'Noto Serif Devanagari', Georgia, serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding: 7px 10px;
+  border-radius: 7px;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 100;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.tip-anchor:hover::after { opacity: 1; }
+
+@media (max-width: 620px) {
+  body { padding: 24px 16px 48px; }
+  .panel-panes { flex-direction: column; }
+  .pane-divider { display: none; }
+  .split-pane + .split-pane { border-top: 1px solid rgba(90,50,20,0.16); }
+  textarea { flex: none; min-height: 90px; resize: vertical; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div>
+    <h1><em>ITRANS</em><span class="arrow"> → </span><span style="font-family:'Noto Serif Devanagari',serif;font-weight:600;color:#7A5030;">देवनागरी</span></h1>
+  </div>
+
+  <div class="panel">
+    <div class="panel-panes">
+
+      <!-- Left pane: input -->
+      <div class="split-pane">
+        <div class="pane-header">
+          <span class="panel-label">ITRANS Input</span>
+          <button class="btn" id="copy-itrans-btn">Copy</button>
+        </div>
+        <textarea id="itrans-input" rows="6"
+          placeholder="e.g. namaH shivAya, yogaH, kShetraM…"></textarea>
+      </div>
+
+      <div class="pane-divider"></div>
+
+      <!-- Right pane: output -->
+      <div class="split-pane">
+        <div class="pane-header">
+          <span class="panel-label" style="font-family:'Noto Serif Devanagari',serif;font-size:1.15rem;font-weight:600;text-transform:none;letter-spacing:0.02em;">देवनागरी</span>
+          <div class="pane-actions">
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-source-toggle">
+              <span>Show source</span>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="cycle-variants-toggle">
+              <span>Cycle variants <i class="tip-anchor" data-tip="Each consonant cluster can have multiple equivalent Devanagari spellings (e.g. सिद्ध्यर्थं, सिद्‌ध्यर्थं, सिद्ध्‌यर्थं…). Enable to show a cycling control below each.">?</i></span>
+            </label>
+            <button class="btn" id="copy-deva-btn">Copy</button>
+          </div>
+        </div>
+        <div class="devanagari-output empty" id="deva-output"></div>
+      </div>
+
+    </div>
+
+    <!-- Helper: full-width below both panes -->
+    <div class="helper-panel-wrap">
+      <button class="helper-toggle-btn" id="helper-toggle">
+        ITRANS Guide <span class="fold-arrow" id="fold-arrow">▶</span>
+      </button>
+      <div class="helper-panel" id="helper-panel" hidden></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ─── ITRANS Tables ────────────────────────────────────────────────────────────
+const HALANT = '\u094D';
+const ZWNJ   = '\u200C';
+
+const CONSONANT_MAP = [
+  ['kSh','क्ष','conj'], ['j~n','ज्ञ','conj'], ['GY','ज्ञ','conj'], ['x','क्ष','conj'],
+  ['kh','ख','cons'], ['gh','घ','cons'], ['Ch','छ','cons'], ['ch','च','cons'],
+  ['jh','झ','cons'], ['NY','ञ','cons'], ['NG','ङ','cons'], ['Th','ठ','cons'],
+  ['Dh','ढ','cons'], ['th','थ','cons'], ['dh','ध','cons'], ['ph','फ','cons'],
+  ['bh','भ','cons'], ['Sh','ष','cons'], ['sh','श','cons'],
+  ['k','क','cons'], ['g','ग','cons'], ['j','ज','cons'], ['J','ञ','cons'],
+  ['T','ट','cons'], ['D','ड','cons'], ['N','ण','cons'], ['t','त','cons'],
+  ['d','द','cons'], ['n','न','cons'], ['p','प','cons'], ['b','ब','cons'],
+  ['m','म','cons'], ['y','य','cons'], ['r','र','cons'], ['l','ल','cons'],
+  ['v','व','cons'], ['w','व','cons'], ['s','स','cons'], ['h','ह','cons'],
+  ['G','ङ','cons'], ['L','ळ','cons'],
+];
+
+const VOWEL_MAP = [
+  ['aa','आ','ा'], ['ii','ई','ी'], ['uu','ऊ','ू'],
+  ['RRi','ऋ','ृ'], ['RRI','ॠ','ॄ'], ['LLi','ऌ','ॢ'],
+  ['Ri','ऋ','ृ'], ['Li','ऌ','ॢ'],
+  ['ai','ऐ','ै'], ['au','औ','ौ'],
+  ['A','आ','ा'], ['I','ई','ी'], ['U','ऊ','ू'],
+  ['e','ए','े'], ['o','ओ','ो'],
+  ['a','अ',''], ['i','इ','ि'], ['u','उ','ु'],
+];
+
+const SPECIAL_MAP = [
+  ['AUM','ॐ'], ['OM','ॐ'],
+  ['.m','ं'], ['.h','ः'], ['.N','ँ'], ['.a','ऽ'],
+  ['||','॥'], ['M','ं'], ['H','ः'], ['|','।'], ["'",'ऽ'],
+];
+
+// ─── Tokenizer ────────────────────────────────────────────────────────────────
+function tryMatch(input, i, map) {
+  for (const e of map) if (input.startsWith(e[0], i)) return e;
+  return null;
+}
+
+function tokenize(input) {
+  const tokens = [];
+  let i = 0;
+  while (i < input.length) {
+    // << and >> → literal < and >
+    if (input.startsWith('<<', i)) {
+      tokens.push({ kind: 'escaped', deva: '<', itrans: '<<' });
+      i += 2; continue;
+    }
+    if (input.startsWith('>>', i)) {
+      tokens.push({ kind: 'escaped', deva: '>', itrans: '>>' });
+      i += 2; continue;
+    }
+    // <...> → passthrough content verbatim
+    if (input[i] === '<') {
+      const end = input.indexOf('>', i + 1);
+      if (end !== -1) {
+        const content = input.slice(i + 1, end);
+        tokens.push({ kind: 'escaped', deva: content, itrans: '<' + content + '>' });
+        i = end + 1; continue;
+      }
+    }
+    if (/\s/.test(input[i])) {
+      let j = i + 1;
+      while (j < input.length && /\s/.test(input[j])) j++;
+      const ws = input.slice(i, j);
+      tokens.push({ kind: 'ws', deva: ws, itrans: ws });
+      i = j; continue;
+    }
+    if (input[i] === '[') {
+      const m = input.slice(i).match(/^\[(\d+)\]/);
+      if (m) { tokens.push({ kind: 'override', value: parseInt(m[1], 10) }); i += m[0].length; continue; }
+    }
+    const cm = tryMatch(input, i, CONSONANT_MAP);
+    if (cm) { tokens.push({ kind: cm[2], itrans: cm[0], deva: cm[1] }); i += cm[0].length; continue; }
+    const vm = tryMatch(input, i, VOWEL_MAP);
+    if (vm) { tokens.push({ kind: 'vowel', itrans: vm[0], deva: vm[1], matra: vm[2] }); i += vm[0].length; continue; }
+    const sm = tryMatch(input, i, SPECIAL_MAP);
+    if (sm) { tokens.push({ kind: 'special', itrans: sm[0], deva: sm[1] }); i += sm[0].length; continue; }
+    tokens.push({ kind: 'unknown', deva: input[i], itrans: input[i] });
+    i++;
+  }
+  return tokens;
+}
+
+// ─── Syllable Grouper ─────────────────────────────────────────────────────────
+function buildGroups(tokens) {
+  const groups = [];
+  let i = 0;
+  while (i < tokens.length) {
+    const tok = tokens[i];
+    if (tok.kind === 'cons' || tok.kind === 'conj') {
+      const consonants = [];
+      let j = i, itransStr = '';
+      while (j < tokens.length && (tokens[j].kind === 'cons' || tokens[j].kind === 'conj')) {
+        consonants.push({ deva: tokens[j].deva, isAtomic: tokens[j].kind === 'conj' });
+        itransStr += tokens[j].itrans;
+        j++;
+      }
+      let vowel = null;
+      if (j < tokens.length && tokens[j].kind === 'vowel') {
+        vowel = { matra: tokens[j].matra };
+        itransStr += tokens[j].itrans;
+        j++;
+      }
+      let overrideIdx = null;
+      if (j < tokens.length && tokens[j].kind === 'override') { overrideIdx = tokens[j].value; j++; }
+      const variantCount = Math.pow(2, consonants.length - 1);
+      const variantIndex = overrideIdx !== null
+        ? ((overrideIdx - 1) % variantCount + variantCount) % variantCount : 0;
+      groups.push({ type: 'syllable', consonants, vowel, variantCount, variantIndex, itrans: itransStr });
+      i = j;
+    } else if (tok.kind === 'vowel') {
+      groups.push({ type: 'passthrough', deva: tok.deva, itrans: tok.itrans }); i++;
+    } else if (tok.kind === 'escaped') {
+      groups.push({ type: 'passthrough', deva: tok.deva, itrans: tok.itrans, escaped: true }); i++;
+    } else if (tok.kind === 'ws' || tok.kind === 'special' || tok.kind === 'unknown') {
+      groups.push({ type: 'passthrough', deva: tok.deva, itrans: tok.itrans }); i++;
+    } else { i++; }
+  }
+  return groups;
+}
+
+// ─── Rendering ────────────────────────────────────────────────────────────────
+function renderSyllable(group) {
+  const { consonants, vowel, variantIndex } = group;
+  const n = consonants.length;
+  let s = '';
+  for (let k = 0; k < n; k++) {
+    s += consonants[k].deva;
+    if (k < n - 1) { s += HALANT; if ((variantIndex >> k) & 1) s += ZWNJ; }
+  }
+  if (vowel === null)          s += HALANT;
+  else if (vowel.matra !== '') s += vowel.matra;
+  return s;
+}
+
+function getCurrentDevanagari(groups) {
+  return groups.map(g => g.type === 'passthrough' ? g.deva : renderSyllable(g)).join('');
+}
+
+// ─── Helper panel ─────────────────────────────────────────────────────────────
+const HELPER_SECTIONS = [
+  { title: 'Vowels (स्वर)', items: [
+    {d:'अ',i:'a'},{d:'आ',i:'aa'},{d:'इ',i:'i'},{d:'ई',i:'ii'},
+    {d:'उ',i:'u'},{d:'ऊ',i:'uu'},{d:'ऋ',i:'Ri'},{d:'ॠ',i:'RRI'},
+    {d:'ऌ',i:'Li'},{d:'ए',i:'e'},{d:'ऐ',i:'ai'},{d:'ओ',i:'o'},{d:'औ',i:'au'},
+  ]},
+  { title: 'Markers (चिह्न)', items: [
+    {d:'ं',i:'M'},{d:'ः',i:'H'},{d:'ँ',i:'.N'},{d:'ऽ',i:"'"},{d:'।',i:'|'},{d:'॥',i:'||'},{d:'ॐ',i:'OM'},
+  ]},
+  { title: 'क-वर्ग', items: [{d:'क',i:'k'},{d:'ख',i:'kh'},{d:'ग',i:'g'},{d:'घ',i:'gh'},{d:'ङ',i:'G'}]},
+  { title: 'च-वर्ग', items: [{d:'च',i:'ch'},{d:'छ',i:'Ch'},{d:'ज',i:'j'},{d:'झ',i:'jh'},{d:'ञ',i:'J'}]},
+  { title: 'ट-वर्ग', items: [{d:'ट',i:'T'},{d:'ठ',i:'Th'},{d:'ड',i:'D'},{d:'ढ',i:'Dh'},{d:'ण',i:'N'}]},
+  { title: 'त-वर्ग', items: [{d:'त',i:'t'},{d:'थ',i:'th'},{d:'द',i:'d'},{d:'ध',i:'dh'},{d:'न',i:'n'}]},
+  { title: 'प-वर्ग', items: [{d:'प',i:'p'},{d:'फ',i:'ph'},{d:'ब',i:'b'},{d:'भ',i:'bh'},{d:'म',i:'m'}]},
+  { title: 'अन्तस्थ', items: [{d:'य',i:'y'},{d:'र',i:'r'},{d:'ल',i:'l'},{d:'व',i:'v'}]},
+  { title: 'ऊष्म',    items: [{d:'श',i:'sh'},{d:'ष',i:'Sh'},{d:'स',i:'s'},{d:'ह',i:'h'}]},
+  { title: 'विशेष',   items: [{d:'ळ',i:'L'},{d:'क्ष',i:'kSh'},{d:'ज्ञ',i:'GY'}]},
+];
+
+function buildHelperPanel() {
+  const panel = document.getElementById('helper-panel');
+  HELPER_SECTIONS.forEach(section => {
+    const sec = document.createElement('div');
+    sec.className = 'helper-section';
+    const title = document.createElement('div');
+    title.className = 'helper-section-title';
+    title.textContent = section.title;
+    sec.appendChild(title);
+    const grid = document.createElement('div');
+    grid.className = 'helper-grid';
+    section.items.forEach(item => {
+      const btn = document.createElement('div');
+      btn.className = 'mapping-item';
+      btn.title = `Insert: ${item.i}`;
+      const deva = document.createElement('span'); deva.className = 'mapping-deva'; deva.textContent = item.d;
+      const itr  = document.createElement('span'); itr.className  = 'mapping-itrans'; itr.textContent = item.i;
+      btn.appendChild(deva); btn.appendChild(itr);
+      btn.addEventListener('click', () => insertAtCursor(item.i));
+      grid.appendChild(btn);
+    });
+    sec.appendChild(grid);
+    panel.appendChild(sec);
+  });
+}
+
+function insertAtCursor(text) {
+  const ta = itransInput;
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
+  ta.selectionStart = ta.selectionEnd = s + text.length;
+  ta.focus();
+  ta.dispatchEvent(new Event('input'));
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const state = { itrans: '', groups: [], showSource: false, showCycleVariants: false };
+
+// ─── DOM refs ─────────────────────────────────────────────────────────────────
+const itransInput         = document.getElementById('itrans-input');
+const devaOutput          = document.getElementById('deva-output');
+const copyItransBtn       = document.getElementById('copy-itrans-btn');
+const copyDevaBtn         = document.getElementById('copy-deva-btn');
+const showSourceToggle    = document.getElementById('show-source-toggle');
+const cycleVariantsToggle = document.getElementById('cycle-variants-toggle');
+const helperToggleBtn     = document.getElementById('helper-toggle');
+const helperPanel         = document.getElementById('helper-panel');
+const foldArrow           = document.getElementById('fold-arrow');
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function makeVariantCtrl(group) {
+  const ctrl = document.createElement('span');
+  ctrl.className = 'variant-ctrl';
+  ctrl.title = 'Click to cycle rendering';
+  const sym = document.createElement('span'); sym.className = 'cycle-sym'; sym.textContent = '↻';
+  const cnt = document.createElement('span'); cnt.className = 'cycle-count';
+  cnt.textContent = `${group.variantIndex + 1}/${group.variantCount}`;
+  ctrl.appendChild(sym); ctrl.appendChild(cnt);
+  ctrl.addEventListener('click', () => {
+    group.variantIndex = (group.variantIndex + 1) % group.variantCount;
+    render();
+  });
+  return ctrl;
+}
+
+function render() {
+  devaOutput.innerHTML = '';
+  if (state.groups.length === 0) { devaOutput.classList.add('empty'); return; }
+  devaOutput.classList.remove('empty');
+
+  const mainDiv = document.createElement('div');
+  mainDiv.className = 'deva-main';
+
+  state.groups.forEach(group => {
+    const devaText    = group.type === 'passthrough' ? group.deva : renderSyllable(group);
+    const isAmbiguous = group.type === 'syllable' && group.variantCount > 1;
+    const isWS        = group.type === 'passthrough' && /^\s+$/.test(group.deva);
+
+    const needsSource = state.showSource && !isWS;
+    const needsCycle  = state.showCycleVariants && isAmbiguous;
+
+    if (!needsSource && !needsCycle) {
+      mainDiv.appendChild(document.createTextNode(devaText));
+      return;
+    }
+
+    const span = document.createElement('span');
+
+    if (needsSource) {
+      span.className = 'cluster src';
+      const label = document.createElement('span');
+      label.className = 'itrans-label';
+      label.textContent = group.itrans || group.deva;
+      span.appendChild(label);
+      span.appendChild(document.createTextNode(devaText));
+      if (needsCycle) span.appendChild(makeVariantCtrl(group));
+    } else {
+      span.className = 'cluster cyc';
+      span.appendChild(document.createTextNode(devaText));
+      span.appendChild(makeVariantCtrl(group));
+    }
+
+    mainDiv.appendChild(span);
+  });
+
+  devaOutput.appendChild(mainDiv);
+}
+
+// ─── Copy ─────────────────────────────────────────────────────────────────────
+function copyText(text, btn) {
+  const orig = btn.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied'); btn.disabled = true;
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); btn.disabled = false; }, 1500);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+  });
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+itransInput.addEventListener('input', () => {
+  state.itrans = itransInput.value;
+  state.groups = buildGroups(tokenize(state.itrans));
+  render();
+});
+
+showSourceToggle.addEventListener('change', () => { state.showSource = showSourceToggle.checked; render(); });
+cycleVariantsToggle.addEventListener('change', () => { state.showCycleVariants = cycleVariantsToggle.checked; render(); });
+
+helperToggleBtn.addEventListener('click', () => {
+  helperPanel.hidden = !helperPanel.hidden;
+  foldArrow.classList.toggle('open', !helperPanel.hidden);
+});
+
+copyItransBtn.addEventListener('click', () => copyText(state.itrans, copyItransBtn));
+copyDevaBtn.addEventListener('click',   () => copyText(getCurrentDevanagari(state.groups), copyDevaBtn));
+
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+buildHelperPanel();
+render();
+</script>
+</body>
+</html>

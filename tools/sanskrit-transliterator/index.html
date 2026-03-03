@@ -250,7 +250,7 @@ textarea::placeholder { color: #B09070; font-style: italic; }
 /* ── Helper panel (full-width, single column, below both panes) ── */
 .helper-panel-wrap {
   position: relative;
-  padding: 16px 22px 4px;
+  padding: 16px 22px 18px;
 }
 
 .helper-panel-wrap::before {
@@ -799,6 +799,9 @@ function render() {
   const mainDiv = document.createElement('div');
   mainDiv.className = 'deva-main';
 
+  let buf = '';
+  const flush = () => { if (buf) { mainDiv.appendChild(document.createTextNode(buf)); buf = ''; } };
+
   state.groups.forEach(group => {
     const devaText    = group.type === 'passthrough' ? group.deva : renderSyllable(group);
     const isAmbiguous = group.type === 'syllable' && group.variantCount > 1;
@@ -808,10 +811,11 @@ function render() {
     const needsCycle  = state.showCycleVariants && isAmbiguous;
 
     if (!needsSource && !needsCycle) {
-      mainDiv.appendChild(document.createTextNode(devaText));
+      buf += devaText;
       return;
     }
 
+    flush();
     const span = document.createElement('span');
 
     if (needsSource) {
@@ -830,6 +834,7 @@ function render() {
 
     mainDiv.appendChild(span);
   });
+  flush();
 
   devaOutput.appendChild(mainDiv);
 }
